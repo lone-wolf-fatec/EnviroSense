@@ -23,11 +23,10 @@ A **Tecsus** é uma empresa especializada na coleta e processamento de dados por
 
 Os dados coletados pelas estações são enviados periodicamente a um servidor central, onde são recepcionados, armazenados e disponibilizados em um **portal web** com dashboards interativos e relatórios para análise. O sistema deve ser pensado para diferentes perfis de clientes:
 
-| Perfil | Descrição |
+| Perfil Escolhido | Descrição |
 |--------|-----------|
-| 🏢 Iniciativa Privada | Multinacional de agricultura de precisão com orçamento amplo e crescimento planejado |
 | 🏛️ Órgão Público | Defesa Civil com demanda nacional, manutenção facilitada e padrões governamentais |
-| 🌿 ONG / Associação | Organização sem fins lucrativos com orçamento restrito e cobertura regional |
+
 
 ---
 
