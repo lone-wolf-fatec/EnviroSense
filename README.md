@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/lone-wolf-fatec/envirosense/main/banner-envirosense.svg" alt="EnviroSense Banner" width="100%"/>
+</p>
+
 <h1 align="center">
   <br>
   🌦️ EnviroSense
@@ -26,7 +30,6 @@ Os dados coletados pelas estações são enviados periodicamente a um servidor c
 | Perfil Escolhido | Descrição |
 |--------|-----------|
 | 🏛️ Órgão Público | Defesa Civil com demanda nacional, manutenção facilitada e padrões governamentais |
-
 
 ---
 
