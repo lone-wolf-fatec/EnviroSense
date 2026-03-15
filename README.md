@@ -25,7 +25,7 @@
 
 A **Tecsus** é uma empresa especializada na coleta e processamento de dados por meio de redes de sensores sem fio (IoT), atuando principalmente no monitoramento de utilidades como água, energia e gás. Com o objetivo de expandir seu portfólio para o monitoramento ambiental, a empresa propôs o desenvolvimento de estações meteorológicas de baixo custo capazes de medir parâmetros como **direção e velocidade do vento, índice pluviométrico, umidade, temperatura e pressão atmosférica**.
 
-Os dados coletados pelas estações são enviados periodicamente a um servidor central, onde são recepcionados, armazenados e disponibilizados em um **portal web** com dashboards interativos e relatórios para análise. O sistema deve ser pensado para diferentes perfis de clientes:
+Os dados coletados pelas estações são enviados periodicamente a um servidor central, onde são recepcionados, armazenados e disponibilizados em um **portal web** com dashboards interativos e relatórios para análise. O sistema deve ser pensado para o seguinte perfil de cliente:
 
 | Perfil Escolhido | Descrição |
 |--------|-----------|
