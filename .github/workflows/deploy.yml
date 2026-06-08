@@ -31,7 +31,7 @@ jobs:
       - name: Deploy no Azure
         run: |
           cd frontend
-          zip -r ../app.zip build/
+          zip -r ../app.zip dist/
           cd ..
           USERNAME=$(echo '${{ secrets.AZURE_PUBLISH_PROFILE_PROD }}' | grep -oP 'userName="\K[^"]+' | head -1)
           PASSWORD=$(echo '${{ secrets.AZURE_PUBLISH_PROFILE_PROD }}' | grep -oP 'userPWD="\K[^"]+' | head -1)
