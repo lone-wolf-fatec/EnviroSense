@@ -6,7 +6,6 @@ const bcrypt   = require('bcryptjs')
 
 async function run() {
 
-  // conecta no banco padrão para criar o banco enviro se não existir
   const init = new Pool({
     host:     process.env.PG_HOST,
     port:     process.env.PG_PORT,
@@ -18,7 +17,6 @@ async function run() {
   try { await init.query('CREATE DATABASE ' + process.env.PG_DATABASE) } catch {}
   await init.end()
 
-  // conecta no banco correto
   const db = new Pool({
     host:     process.env.PG_HOST,
     port:     process.env.PG_PORT,
@@ -68,7 +66,7 @@ async function run() {
     UNIQUE(id_estacao, id_tipo_parametro)
   )`)
 
-  // TABELA ALERTAS
+  // TABELA ALERTAS — com valor_min e valor_max
   await db.query(`CREATE TABLE IF NOT EXISTS alertas (
     id           SERIAL PRIMARY KEY,
     id_estacao   INTEGER REFERENCES estacoes(id)   ON DELETE CASCADE,
@@ -76,10 +74,12 @@ async function run() {
     severidade   VARCHAR(20) DEFAULT 'aviso',
     mensagem     TEXT        NOT NULL,
     ativo        BOOLEAN     DEFAULT true,
+    valor_min    DECIMAL(10,4),
+    valor_max    DECIMAL(10,4),
     criado_em    TIMESTAMP   DEFAULT NOW()
   )`)
 
-  // TABELA MEDICOES — COM TODAS AS COLUNAS CERTAS
+  // TABELA MEDICOES — com todos os campos incluindo timestamp_mqtt e registrado_em
   await db.query(`CREATE TABLE IF NOT EXISTS medicoes (
     id             SERIAL PRIMARY KEY,
     id_estacao     INTEGER REFERENCES estacoes(id)   ON DELETE CASCADE,
@@ -102,26 +102,26 @@ async function run() {
 
   // TIPOS PADRÃO
   await db.query(`INSERT INTO tipos_parametro (nome, unidade, fator, valor_offset) VALUES
-    ('Temperatura', 'C',    1, 0),
-    ('Umidade',     '%',    1, 0),
+    ('Temperatura',  'C',    1, 0),
+    ('Umidade',      '%',    1, 0),
     ('Pressão Alta', 'hPa',  1, 0),
-    ('Chuva',       'mm',   1, 0),
-    ('Vento',       'km/h', 1, 0)
+    ('Chuva',        'mm',   1, 0),
+    ('Vento',        'km/h', 1, 0)
     ON CONFLICT (nome) DO NOTHING`)
 
   // 3 ESTAÇÕES PADRÃO COM UID
   await db.query(`INSERT INTO estacoes (nome, uid, endereco, responsavel, descricao) VALUES
-    ('Estação Centro',   'EST001', 'Praça da Sé, São Paulo',        'Carlos Admin', 'Estação simulada pelo dispositivo EST001'),
-    ('Estação Norte',    'EST002', 'Av. Zaki Narchi, São Paulo',    'Carlos Admin', 'Estação simulada pelo dispositivo EST002'),
-    ('Estação Sul',      'EST003', 'Av. Cupecê, São Paulo',         'Carlos Admin', 'Estação simulada pelo dispositivo EST003')
+    ('Estação Centro', 'EST001', 'Praça da Sé, São Paulo',     'Carlos Admin', 'Estação simulada pelo dispositivo EST001'),
+    ('Estação Norte',  'EST002', 'Av. Zaki Narchi, São Paulo', 'Carlos Admin', 'Estação simulada pelo dispositivo EST002'),
+    ('Estação Sul',    'EST003', 'Av. Cupecê, São Paulo',      'Carlos Admin', 'Estação simulada pelo dispositivo EST003')
     ON CONFLICT (nome) DO NOTHING`)
 
-  // VINCULA PARAMETROS EM CADA ESTAÇÃO
+  // VINCULA PARÂMETROS EM CADA ESTAÇÃO
   await db.query(`
     INSERT INTO parametros (id_estacao, id_tipo_parametro)
     SELECT e.id, t.id
     FROM estacoes e, tipos_parametro t
-    WHERE e.uid IN ('EST001','EST002','EST003')
+    WHERE e.uid  IN ('EST001','EST002','EST003')
       AND t.nome IN ('Temperatura','Umidade','Pressão Alta')
     ON CONFLICT (id_estacao, id_tipo_parametro) DO NOTHING
   `)

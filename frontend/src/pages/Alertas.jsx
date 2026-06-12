@@ -1,7 +1,8 @@
 import { useState } from 'react'
 
 const FORM_VAZIO = {
-  id_estacao: '', id_parametro: '', severidade: 'info', mensagem: '', ativo: true
+  id_estacao: '', id_parametro: '', severidade: 'info', mensagem: '',
+  ativo: true, valor_min: '', valor_max: ''
 }
 
 export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }) {
@@ -33,7 +34,9 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
       id_parametro: alerta.id_parametro || '',
       severidade:   alerta.severidade   || 'info',
       mensagem:     alerta.mensagem     || '',
-      ativo:        alerta.ativo !== false
+      ativo:        alerta.ativo !== false,
+      valor_min:    alerta.valor_min    ?? '',
+      valor_max:    alerta.valor_max    ?? ''
     })
     setMostrarModal(true)
   }
@@ -46,12 +49,6 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
 
   function campo(key, val) {
     setFormulario(function(prev) { return { ...prev, [key]: val } })
-  }
-
-  function formatarData(dataStr) {
-    if (!dataStr) return '—'
-    const d = new Date(dataStr)
-    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR')
   }
 
   return (
@@ -75,6 +72,8 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                 <th>Parâmetro</th>
                 <th>Severidade</th>
                 <th>Mensagem</th>
+                <th>Mín</th>
+                <th>Máx</th>
                 <th>Status</th>
                 {ehAdmin && <th>Ações</th>}
               </tr>
@@ -91,7 +90,9 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                       </span>
                     </td>
                     <td>{alerta.mensagem}</td>
-                    <td>
+<td>{alerta.valor_min != null ? Number(alerta.valor_min).toFixed(2) : '—'}</td>
+<td>{alerta.valor_max != null ? Number(alerta.valor_max).toFixed(2) : '—'}</td>
+<td>
                       <span className={'badge ' + (alerta.ativo ? 'bg-success' : 'bg-secondary')}>
                         {alerta.ativo ? 'Ativo' : 'Resolvido'}
                       </span>
@@ -113,7 +114,7 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
               })}
               {alertas.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted py-3">
+                  <td colSpan={8} className="text-center text-muted py-3">
                     Nenhum alerta cadastrado.
                   </td>
                 </tr>
@@ -134,12 +135,10 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
               <button className="btn-close" onClick={function() { setMostrarModal(false) }} />
             </div>
 
-            {/* começo do formulário */}
             <form onSubmit={salvar}>
               <div className="modal-body">
 
-                {/* campo estação: select dinâmico carregado do banco */}
-                {/* ao mudar a estação zera o parâmetro pois cada estação tem os seus */}
+                {/* campo estação */}
                 <div className="mb-3">
                   <label className="form-label">Estação *</label>
                   <select className="form-select" required value={formulario.id_estacao}
@@ -155,7 +154,7 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </select>
                 </div>
 
-                {/* campo parâmetro: select dependente da estação escolhida acima */}
+                {/* campo parâmetro */}
                 <div className="mb-3">
                   <label className="form-label">
                     Parâmetro
@@ -174,7 +173,7 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </select>
                 </div>
 
-                {/* campo severidade: select fixo com três opções */}
+                {/* campo severidade */}
                 <div className="mb-3">
                   <label className="form-label">Severidade inicial *</label>
                   <select className="form-select" value={formulario.severidade}
@@ -185,8 +184,25 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </select>
                 </div>
 
-                {/* campo mensagem: textarea livre */}
-                {/* palavras como quente frio calor ativam o escalamento automático no receptor */}
+                {/* campos valor_min e valor_max lado a lado */}
+                <div className="row g-2 mb-3">
+                  <div className="col">
+                    <label className="form-label">Valor mínimo</label>
+                    <input type="number" step="0.01" className="form-control"
+                      placeholder="Ex: 5"
+                      value={formulario.valor_min}
+                      onChange={function(e) { campo('valor_min', e.target.value) }} />
+                  </div>
+                  <div className="col">
+                    <label className="form-label">Valor máximo</label>
+                    <input type="number" step="0.01" className="form-control"
+                      placeholder="Ex: 38"
+                      value={formulario.valor_max}
+                      onChange={function(e) { campo('valor_max', e.target.value) }} />
+                  </div>
+                </div>
+
+                {/* campo mensagem */}
                 <div className="mb-3">
                   <label className="form-label">Mensagem *</label>
                   <div className="form-text mb-2">
@@ -197,7 +213,7 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                     onChange={function(e) { campo('mensagem', e.target.value) }} />
                 </div>
 
-                {/* checkbox ativo: só aparece ao editar, não ao criar */}
+                {/* checkbox ativo: só ao editar */}
                 {idAlertaEditando && (
                   <div className="form-check">
                     <input className="form-check-input" type="checkbox"
@@ -217,7 +233,6 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                 </button>
               </div>
             </form>
-            {/* fim do formulário */}
 
           </div></div>
         </div>

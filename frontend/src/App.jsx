@@ -19,7 +19,6 @@ const LIMITES = {
   vento:       { max: 90,   min: null, unidade: 'km/h', iconeMax: '🌪️', iconeMin: null },
 }
 
-
 function detectarChave(nome) {
   if (!nome) return null
   const n = nome.toLowerCase()
@@ -115,7 +114,8 @@ export default function App() {
   const [parametros, setParametros] = useState([])
   const [alertas,    setAlertas]    = useState([])
   const [usuarios,   setUsuarios]   = useState([])
-  const [medicoes,   setMedicoes]   = useState([])
+  const [medicoes,   setMedicoes]   = useState([])    // última leitura por parâmetro — aba Medições
+  const [historico,  setHistorico]  = useState([])    // histórico completo — Dashboard
 
   // persiste IDs ja vistas no localStorage para nao disparar toast ao recarregar a pagina
   const medicoesVistas = useRef(new Set(
@@ -124,18 +124,21 @@ export default function App() {
 
   useEffect(function() {
     if (!usuario) return
-    buscar('/estacoes',   setEstacoes)
-    buscar('/tipos',      setTipos)
-    buscar('/parametros', setParametros)
-    buscar('/alertas',    setAlertas)
-    buscar('/usuarios',   setUsuarios)
-    buscar('/medicoes',   setMedicoes)
+    buscar('/estacoes',           setEstacoes)
+    buscar('/tipos',              setTipos)
+    buscar('/parametros',         setParametros)
+    buscar('/alertas',            setAlertas)
+    buscar('/usuarios',           setUsuarios)
+    buscar('/medicoes',           setMedicoes)
+    buscar('/medicoes/historico', setHistorico)  // histórico completo para o Dashboard
   }, [usuario?.id])
 
   useEffect(function() {
     if (!usuario) return
     const t = setInterval(function() {
       buscar('/alertas', setAlertas)
+
+      // atualiza última leitura de cada parâmetro — aba Medições
       api('/medicoes').then(function(novas) {
         if (!Array.isArray(novas)) return
         setMedicoes(novas)
@@ -149,6 +152,10 @@ export default function App() {
       //    verificarExtremo(m)
         })
       })
+
+      // atualiza histórico completo — Dashboard
+      buscar('/medicoes/historico', setHistorico)
+
     }, INTERVALO)
     return function() { clearInterval(t) }
   }, [usuario?.id])
@@ -208,11 +215,11 @@ export default function App() {
       </nav>
 
       <div className="container-fluid p-4" style={{ maxWidth: 1200 }}>
-        {aba === 'dashboard'  && <Dashboard  medicoes={medicoes} estacoes={estacoes} />}
+        {aba === 'dashboard'  && <Dashboard  medicoes={historico}  estacoes={estacoes} />}
         {aba === 'estacoes'   && <Estacoes   estacoes={estacoes} parametros={parametros} tipos={tipos} ehAdmin={ehAdmin} crud={crud} />}
         {aba === 'parametros' && <Parametros tipos={tipos} ehAdmin={ehAdmin} crud={crud} />}
         {aba === 'alertas'    && <Alertas    alertas={alertas} estacoes={estacoes} parametros={parametros} ehAdmin={ehAdmin} crud={crud} />}
-        {aba === 'medicoes'   && <Medicoes   medicoes={medicoes} estacoes={estacoes} />}
+        {aba === 'medicoes'   && <Medicoes   medicoes={medicoes}  estacoes={estacoes} />}
         {aba === 'usuarios'   && <Usuarios   usuarios={usuarios} usuarioLogado={usuario} crud={crud} />}
       </div>
 

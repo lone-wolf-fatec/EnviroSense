@@ -12,8 +12,8 @@ async function listar(req, res) {
 
 async function criar(req, res) {
   try {
-    const { id_estacao, id_tipo_parametro, nome, valor_min, valor_max } = req.body
-    const linhas = await ParametroModel.criar(id_estacao, id_tipo_parametro, nome, valor_min, valor_max)
+    const { id_estacao, id_tipo_parametro } = req.body
+    const linhas = await ParametroModel.criar(id_estacao, id_tipo_parametro)
     res.status(201).json(linhas[0])
   } catch (erro) {
     res.status(500).json({ erro: erro.message })
