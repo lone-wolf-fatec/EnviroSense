@@ -1,5 +1,4 @@
 name: Deploy Manual
-
 on:
   workflow_dispatch:
     inputs:
@@ -7,24 +6,21 @@ on:
         description: 'Versão do deploy (ex: 1.0, 1.1)'
         required: true
         default: '1.0'
-
 permissions:
   contents: write
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Criar branch de deploy
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git checkout -b deploy/v${{ github.event.inputs.versao }}
-          git push origin deploy/v${{ github.event.inputs.versao }}
+          git push origin deploy/v${{ github.event.inputs.versao }} --force
 
       - name: Instalar dependências frontend
         run: |
@@ -32,9 +28,18 @@ jobs:
           npm install
           npm run build
 
-      - name: Deploy no Azure
-        uses: azure/webapps-deploy@v2
+      - name: Login no Azure
+        uses: azure/login@v2
         with:
-          app-name: envirosense-api-fnaqcgh2gaf4fhcg
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-          package: .
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy no Azure
+        run: |
+          cd frontend
+          zip -r ../app.zip dist/
+          cd ..
+          az webapp deploy \
+            --name envirosense-app \
+            --resource-group envirosense-rg \
+            --src-path app.zip \
+            --type zip
