@@ -1,19 +1,14 @@
 # ci.yml — integração contínua seguindo Martin Fowler
 # roda automaticamente a cada push no branch main
-
 name: CI
-
 on:
   push:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-
       # baixa o código do repositório
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -22,11 +17,15 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       # instala dependências do backend
       - name: Instalar dependências do backend
         run: cd backend && npm install
+
+      # lint do backend
+      - name: Lint do backend
+        run: cd backend && npm run lint
 
       # roda os 20 testes unitários do backend
       # fowler: make the build self-testing
@@ -50,6 +49,10 @@ jobs:
       # instala dependências do frontend
       - name: Instalar dependências do frontend
         run: cd frontend && npm install
+
+      # lint do frontend
+      - name: Lint do frontend
+        run: cd frontend && npm run lint
 
       # compila o React
       # fowler: automate the build — sem intervenção manual
