@@ -25,7 +25,13 @@ app.use('/medicoes', require('./rotas/medicoes'))
 app.use('/logs-alertas', require('./rotas/logs'))
 app.use('/', require('./rotas/leituras'))
 
-app.use(express.static(path.join(__dirname, '../frontend/dist')))
-app.get('/{*path}', (req, res) => res.sendFile(path.join(__dirname, '../frontend/dist/index.html')))
+// Caminho do build do frontend.
+// Localmente: backend/server.js -> ../frontend/dist
+// Em produção (Azure): tudo fica dentro de wwwroot -> frontend/dist
+// FRONTEND_DIST permite sobrescrever via variável de ambiente se necessário
+const distPath = process.env.FRONTEND_DIST || path.join(__dirname, '../frontend/dist')
+
+app.use(express.static(distPath))
+app.get('/{*path}', (req, res) => res.sendFile(path.join(distPath, 'index.html')))
 
 app.listen(PORTA, () => console.log(`[OK] Servidor na porta ${PORTA}`))
