@@ -9,7 +9,7 @@ import Usuarios   from './pages/Usuarios'
 import Dashboard  from './pages/Dashboard'
 import { gerarAvisosAutomaticos, gerarAvisosDeAlertas } from './utils/avisos'
 
-const BASE_URL  = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const BASE_URL  = import.meta.env.VITE_API_URL || ''
 const INTERVALO = 10000
 
 async function api(rota, metodo, dados) {
