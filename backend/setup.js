@@ -14,7 +14,7 @@ async function run() {
     database: 'postgres',
     ssl:      false
   })
-  try { await init.query('CREATE DATABASE ' + process.env.PG_DATABASE) } catch {}
+  try { await init.query('CREATE DATABASE ' + process.env.PG_DATABASE) } catch { /* banco já existe */ }
   await init.end()
 
   const db = new Pool({

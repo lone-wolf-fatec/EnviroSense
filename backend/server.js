@@ -9,7 +9,7 @@ const PORTA = process.env.PORT || 3001
 app.use(require('cors')())
 app.use(express.json())
 
-conectarMongo().then(() => console.log('MongoDB conectado')).catch(e => console.log('MongoDB offline'))
+conectarMongo().then(() => console.log('MongoDB conectado')).catch(_e => console.log('MongoDB offline'))
 
 // Inicia transferência MongoDB → PostgreSQL
 require('./servico_transferencia')
