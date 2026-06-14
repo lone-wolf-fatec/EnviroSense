@@ -29,8 +29,6 @@ jobs:
 
       - name: Build do frontend
         working-directory: frontend
-        env:
-          VITE_API_URL: ""
         run: |
           npm ci
           npm run build
@@ -51,15 +49,16 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Empacotar aplicação (backend + frontend/dist)
+      - name: Empacotar aplicação (backend + frontend/dist + mqtt)
         run: |
           mkdir -p deploy_package
-          cp -r backend/* deploy_package/
-          cp -r backend/.[!.]* deploy_package/ 2>/dev/null || true
+          cp -r backend/. deploy_package/
           mkdir -p deploy_package/frontend
           cp -r frontend/dist deploy_package/frontend/dist
+          cp -r mqtt deploy_package/mqtt
+          chmod +x deploy_package/startup.sh
           cd deploy_package
-          zip -r ../app.zip . -x "node_modules/.cache/*"
+          zip -r ../app.zip . -x "node_modules/.cache/*" "mqtt/testes/*" "mqtt/__pycache__/*"
 
       - name: Deploy no Azure
         run: |
@@ -74,7 +73,7 @@ jobs:
           az webapp config set \
             --name envirosense-app \
             --resource-group envirosense-rg \
-            --startup-file "node server.js"
+            --startup-file "bash startup.sh"
 
       - name: Logout do Azure
         if: always()
