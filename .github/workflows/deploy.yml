@@ -27,6 +27,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Build do frontend
         working-directory: frontend
         run: |
@@ -36,6 +41,10 @@ jobs:
       - name: Instalar dependências do backend (produção)
         working-directory: backend
         run: npm ci --omit=dev
+
+      - name: Instalar dependências Python (vendor)
+        run: |
+          pip install -r mqtt/requirements.txt --target mqtt/vendor
 
       - name: Criar tag de versão
         run: |
@@ -49,7 +58,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Empacotar aplicação (backend + frontend/dist + mqtt)
+      - name: Empacotar aplicação (backend + frontend/dist + mqtt com vendor)
         run: |
           mkdir -p deploy_package
           cp -r backend/. deploy_package/
