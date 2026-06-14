@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { toast, ToastContainer } from 'react-toastify'
+import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Estacoes   from './pages/Estacoes'
 import Parametros from './pages/Parametros'
@@ -12,11 +12,11 @@ const BASE_URL  = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const INTERVALO = 10000
 
 const LIMITES = {
-  temperatura: { max: 38,   min: 5,    unidade: '°C',   iconeMax: '🔥', iconeMin: '🥶' },
-  umidade:     { max: 90,   min: 20,   unidade: '%',    iconeMax: '💧', iconeMin: '🏜️' },
-  pressao:     { max: 1030, min: 980,  unidade: 'hPa',  iconeMax: '⬆️', iconeMin: '⬇️' },
-  chuva:       { max: 60,   min: null, unidade: 'mm',   iconeMax: '🌧️', iconeMin: null },
-  vento:       { max: 90,   min: null, unidade: 'km/h', iconeMax: '🌪️', iconeMin: null },
+  temperatura: { max: 38,   min: 5,    unidade: '°C',   msgMax: 'Temperatura MUITO ALTA! 🔥',         msgMin: 'Temperatura BAIXÍSSIMA! 🥶' },
+  umidade:     { max: 90,   min: 20,   unidade: '%',    msgMax: 'Umidade ALTÍSSIMA! 💧',               msgMin: 'Umidade BAIXÍSSIMA! 🏜️' },
+  pressao:     { max: 1030, min: 980,  unidade: 'hPa',  msgMax: 'Pressão MUITO ALTA! ⬆️',              msgMin: 'Pressão MUITO BAIXA! ⬇️' },
+  chuva:       { max: 60,   min: null, unidade: 'mm',   msgMax: 'Chuva MUITO INTENSA! 🌧️',             msgMin: null },
+  vento:       { max: 90,   min: null, unidade: 'km/h', msgMax: 'Velocidade do vento ALTA DEMAIS! 🌪️', msgMin: null },
 }
 
 function detectarChave(nome) {
@@ -30,35 +30,61 @@ function detectarChave(nome) {
   return null
 }
 
-function verificarExtremo(medicao) {
-  const chave = detectarChave(medicao.nome_parametro)
-  if (!chave) return
-  const lim = LIMITES[chave]
-  const v   = Number(medicao.valor)
+// gera avisos automáticos a partir das medições recentes com valores extremos
+export function gerarAvisosAutomaticos(medicoes) {
+  const avisos = []
+  const vistos = new Set()
 
-  if (lim.max !== null && v > lim.max) {
-    toast(
-      `${lim.iconeMax} ${medicao.nome_estacao} — ${medicao.nome_parametro}: ${v.toFixed(1)} ${lim.unidade} (máximo: ${lim.max})`,
-      {
-        style:         { background: '#146c43', color: '#fff', fontWeight: 500 },
-        progressStyle: { background: 'rgba(255,255,255,0.4)' },
-        icon:          false,
-        autoClose:     15000,
-        position:      'bottom-right',
-      }
-    )
-  } else if (lim.min !== null && v < lim.min) {
-    toast(
-      `${lim.iconeMin} ${medicao.nome_estacao} — ${medicao.nome_parametro}: ${v.toFixed(1)} ${lim.unidade} (mínimo: ${lim.min})`,
-      {
-        style:         { background: '#146c43', color: '#fff', fontWeight: 500 },
-        progressStyle: { background: 'rgba(255,255,255,0.4)' },
-        icon:          false,
-        autoClose:     15000,
-        position:      'bottom-right',
-      }
-    )
+  for (const m of medicoes) {
+    const chave = detectarChave(m.nome_parametro)
+    if (!chave) continue
+    const lim = LIMITES[chave]
+    const v   = Number(m.valor)
+    const key = `${m.id_estacao}-${m.nome_parametro}`
+    if (vistos.has(key)) continue
+
+    if (lim.max !== null && v > lim.max) {
+      vistos.add(key)
+      avisos.push({
+        id:             `auto-${key}-max`,
+        nome_estacao:   m.nome_estacao,
+        nome_parametro: m.nome_parametro,
+        severidade:     'critico',
+        mensagem:       `${lim.msgMax} — ${v.toFixed(1)} ${lim.unidade} (máx: ${lim.max})`,
+        ativo:          true,
+        automatico:     true
+      })
+    } else if (lim.min !== null && v < lim.min) {
+      vistos.add(key)
+      avisos.push({
+        id:             `auto-${key}-min`,
+        nome_estacao:   m.nome_estacao,
+        nome_parametro: m.nome_parametro,
+        severidade:     'critico',
+        mensagem:       `${lim.msgMin} — ${v.toFixed(1)} ${lim.unidade} (mín: ${lim.min})`,
+        ativo:          true,
+        automatico:     true
+      })
+    }
   }
+  return avisos
+}
+
+// gera avisos a partir de alertas cadastrados que viraram crítico automaticamente
+function gerarAvisosDeAlertas(alertas) {
+  return alertas
+    .filter(function(a) { return a.severidade === 'critico' && a.ativo })
+    .map(function(a) {
+      return {
+        id:             `alerta-critico-${a.id}`,
+        nome_estacao:   a.nome_estacao,
+        nome_parametro: a.nome_parametro || '—',
+        severidade:     'critico',
+        mensagem:       a.mensagem,
+        ativo:          true,
+        automatico:     true
+      }
+    })
 }
 
 async function api(rota, metodo, dados) {
@@ -114,10 +140,9 @@ export default function App() {
   const [parametros, setParametros] = useState([])
   const [alertas,    setAlertas]    = useState([])
   const [usuarios,   setUsuarios]   = useState([])
-  const [medicoes,   setMedicoes]   = useState([])    // última leitura por parâmetro — aba Medições
-  const [historico,  setHistorico]  = useState([])    // histórico completo — Dashboard
+  const [medicoes,   setMedicoes]   = useState([])
+  const [historico,  setHistorico]  = useState([])
 
-  // persiste IDs ja vistas no localStorage para nao disparar toast ao recarregar a pagina
   const medicoesVistas = useRef(new Set(
     JSON.parse(localStorage.getItem('medicoesVistas') || '[]')
   ))
@@ -130,7 +155,7 @@ export default function App() {
     buscar('/alertas',            setAlertas)
     buscar('/usuarios',           setUsuarios)
     buscar('/medicoes',           setMedicoes)
-    buscar('/medicoes/historico', setHistorico)  // histórico completo para o Dashboard
+    buscar('/medicoes/historico', setHistorico)
   }, [usuario?.id])
 
   useEffect(function() {
@@ -138,30 +163,24 @@ export default function App() {
     const t = setInterval(function() {
       buscar('/alertas', setAlertas)
 
-      // atualiza última leitura de cada parâmetro — aba Medições
       api('/medicoes').then(function(novas) {
         if (!Array.isArray(novas)) return
         setMedicoes(novas)
         novas.forEach(function(m) {
           if (medicoesVistas.current.has(m.id)) return
-          // marca como vista e persiste no localStorage
           medicoesVistas.current.add(m.id)
           localStorage.setItem('medicoesVistas',
             JSON.stringify([...medicoesVistas.current])
           )
-      //    verificarExtremo(m)
         })
       })
 
-      // atualiza histórico completo — Dashboard
       buscar('/medicoes/historico', setHistorico)
-
     }, INTERVALO)
     return function() { clearInterval(t) }
   }, [usuario?.id])
 
   function sair() {
-    // limpa tudo incluindo medicoesVistas ao sair
     localStorage.clear()
     setUsuario(null)
   }
@@ -194,6 +213,21 @@ export default function App() {
     deletarUsuario:   async function(id)    { if (!confirm('Deletar usuário?')) return; await api('/usuarios/'+id,'DELETE'); buscar('/usuarios', setUsuarios) },
   }
 
+  // combina avisos das medições extremas + alertas cadastrados que viraram crítico
+  const avisosAutomaticos = [
+    ...gerarAvisosAutomaticos(medicoes),
+    ...gerarAvisosDeAlertas(alertas)
+  ]
+
+  // remove duplicatas — se um aviso automático e um alerta crítico são do mesmo parâmetro
+  const avisosUnicos = avisosAutomaticos.filter(function(a, i, arr) {
+    return arr.findIndex(function(b) {
+      return b.nome_estacao === a.nome_estacao && b.nome_parametro === a.nome_parametro && b.mensagem === a.mensagem
+    }) === i
+  })
+
+  const todoAlertas = [...alertas, ...avisosUnicos]
+
   return (
     <>
       <nav className="navbar px-3 d-flex justify-content-between align-items-center" style={{ background: '#146c43' }}>
@@ -218,7 +252,7 @@ export default function App() {
         {aba === 'dashboard'  && <Dashboard  medicoes={historico}  estacoes={estacoes} />}
         {aba === 'estacoes'   && <Estacoes   estacoes={estacoes} parametros={parametros} tipos={tipos} ehAdmin={ehAdmin} crud={crud} />}
         {aba === 'parametros' && <Parametros tipos={tipos} ehAdmin={ehAdmin} crud={crud} />}
-        {aba === 'alertas'    && <Alertas    alertas={alertas} estacoes={estacoes} parametros={parametros} ehAdmin={ehAdmin} crud={crud} />}
+        {aba === 'alertas'    && <Alertas    alertas={todoAlertas} estacoes={estacoes} parametros={parametros} ehAdmin={ehAdmin} crud={crud} />}
         {aba === 'medicoes'   && <Medicoes   medicoes={medicoes}  estacoes={estacoes} />}
         {aba === 'usuarios'   && <Usuarios   usuarios={usuarios} usuarioLogado={usuario} crud={crud} />}
       </div>

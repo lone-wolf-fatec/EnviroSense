@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const FORM_VAZIO = {
   id_estacao: '', id_parametro: '', severidade: 'info', mensagem: '',
@@ -10,6 +10,7 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
   const [mostrarModal,     setMostrarModal]     = useState(false)
   const [idAlertaEditando, setIdAlertaEditando] = useState(null)
   const [formulario,       setFormulario]       = useState(FORM_VAZIO)
+  const [avisosVisiveis,   setAvisosVisiveis]   = useState({})
 
   const parametrosDaEstacao = parametros.filter(function(p) {
     return String(p.id_estacao) === String(formulario.id_estacao)
@@ -20,6 +21,27 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
     aviso:   'bg-warning text-dark',
     info:    'bg-info text-dark'
   }
+
+  const alertasAutomaticos = alertas.filter(function(a) { return a.automatico })
+  const alertasCadastrados = alertas.filter(function(a) { return !a.automatico })
+
+  // quando chegam avisos automáticos novos, marca como visível e agenda remoção em 10s
+  useEffect(function() {
+    alertasAutomaticos.forEach(function(a) {
+      if (avisosVisiveis[a.id] === false) return // já foi fechado manualmente
+      if (avisosVisiveis[a.id]) return // já está no timer
+
+      setAvisosVisiveis(function(prev) { return { ...prev, [a.id]: true } })
+
+      setTimeout(function() {
+        setAvisosVisiveis(function(prev) { return { ...prev, [a.id]: false } })
+      }, 10000)
+    })
+  }, [alertasAutomaticos.map(function(a) { return a.id }).join(',')])
+
+  const avisosParaMostrar = alertasAutomaticos.filter(function(a) {
+    return avisosVisiveis[a.id] !== false
+  })
 
   function abrirNovo() {
     setIdAlertaEditando(null)
@@ -63,6 +85,38 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
         )}
       </div>
 
+      {/* avisos automáticos — somem após 10 segundos */}
+      {avisosParaMostrar.length > 0 && (
+        <div className="mb-4">
+          <h6 className="text-muted mb-2">
+            <i className="bi bi-lightning me-1"></i>Avisos automáticos — valores extremos detectados
+          </h6>
+          <div className="row g-2">
+            {avisosParaMostrar.map(function(a) {
+              return (
+                <div key={a.id} className="col-md-6">
+                  <div className="alert alert-danger mb-0 py-2 px-3 d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>{a.nome_estacao}</strong>
+                      <span className="text-muted small ms-2">{a.nome_parametro}</span>
+                      <div>{a.mensagem}</div>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="badge bg-danger">CRÍTICO</span>
+                      <button className="btn-close btn-sm"
+                        onClick={function() {
+                          setAvisosVisiveis(function(prev) { return { ...prev, [a.id]: false } })
+                        }} />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* alertas cadastrados manualmente */}
       <div className="card mb-4">
         <div className="table-responsive">
           <table className="table table-hover mb-0">
@@ -79,7 +133,7 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
               </tr>
             </thead>
             <tbody>
-              {alertas.map(function(alerta) {
+              {alertasCadastrados.map(function(alerta) {
                 return (
                   <tr key={alerta.id}>
                     <td>{alerta.nome_estacao}</td>
@@ -90,9 +144,9 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                       </span>
                     </td>
                     <td>{alerta.mensagem}</td>
-<td>{alerta.valor_min != null ? Number(alerta.valor_min).toFixed(2) : '—'}</td>
-<td>{alerta.valor_max != null ? Number(alerta.valor_max).toFixed(2) : '—'}</td>
-<td>
+                    <td>{alerta.valor_min != null ? Number(alerta.valor_min).toFixed(2) : '—'}</td>
+                    <td>{alerta.valor_max != null ? Number(alerta.valor_max).toFixed(2) : '—'}</td>
+                    <td>
                       <span className={'badge ' + (alerta.ativo ? 'bg-success' : 'bg-secondary')}>
                         {alerta.ativo ? 'Ativo' : 'Resolvido'}
                       </span>
@@ -112,7 +166,7 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </tr>
                 )
               })}
-              {alertas.length === 0 && (
+              {alertasCadastrados.length === 0 && (
                 <tr>
                   <td colSpan={8} className="text-center text-muted py-3">
                     Nenhum alerta cadastrado.
@@ -138,7 +192,6 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
             <form onSubmit={salvar}>
               <div className="modal-body">
 
-                {/* campo estação */}
                 <div className="mb-3">
                   <label className="form-label">Estação *</label>
                   <select className="form-select" required value={formulario.id_estacao}
@@ -154,7 +207,6 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </select>
                 </div>
 
-                {/* campo parâmetro */}
                 <div className="mb-3">
                   <label className="form-label">
                     Parâmetro
@@ -173,7 +225,6 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </select>
                 </div>
 
-                {/* campo severidade */}
                 <div className="mb-3">
                   <label className="form-label">Severidade inicial *</label>
                   <select className="form-select" value={formulario.severidade}
@@ -184,7 +235,6 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </select>
                 </div>
 
-                {/* campos valor_min e valor_max lado a lado */}
                 <div className="row g-2 mb-3">
                   <div className="col">
                     <label className="form-label">Valor mínimo</label>
@@ -202,18 +252,16 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
                   </div>
                 </div>
 
-                {/* campo mensagem */}
                 <div className="mb-3">
                   <label className="form-label">Mensagem *</label>
                   <div className="form-text mb-2">
-                    Use palavras como <strong>quente, calor, frio, gelado, ventania, chuvoso, seco</strong> para que o receptor escale automaticamente para crítico quando o valor for extremo.
+                    Pode incluir emojis! Ex: <strong>Temperatura MUITO ALTA! 🔥</strong>
                   </div>
                   <textarea className="form-control" required rows={3}
                     value={formulario.mensagem}
                     onChange={function(e) { campo('mensagem', e.target.value) }} />
                 </div>
 
-                {/* checkbox ativo: só ao editar */}
                 {idAlertaEditando && (
                   <div className="form-check">
                     <input className="form-check-input" type="checkbox"
