@@ -8,7 +8,7 @@ const pool = new Pool({
   user:     process.env.PG_USER,
   password: process.env.PG_PASSWORD,
   database: process.env.PG_DATABASE,
-  ssl:      false
+  ssl: process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false
 })
 
 const sql = async (texto, valores) => (await pool.query(texto, valores)).rows
@@ -18,9 +18,7 @@ const conectarMongo = async () => {
     const url = process.env.MONGO_URL.includes('envirosense')
       ? process.env.MONGO_URL
       : process.env.MONGO_URL + '/envirosense'
-
     await mongoose.connect(url)
-
     console.log(`[MongoDB] Conectado: ${url}`)
     return mongoose.connection
   } catch (erro) {
