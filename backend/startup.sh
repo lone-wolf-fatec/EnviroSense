@@ -2,10 +2,8 @@
 # startup.sh — inicia o backend Node e os scripts Python (receptor + simulador)
 # usado como Startup Command do Azure App Service
 
-set -e
-
 echo "=== Instalando dependencias Python ==="
-pip install -r mqtt/requirements.txt
+pip3 install -r mqtt/requirements.txt --quiet || pip install -r mqtt/requirements.txt --quiet
 
 echo "=== Iniciando receptor MQTT (Python) em background ==="
 python3 mqtt/receptor_mongodb.py &
