@@ -25,11 +25,11 @@ function detectarCor(nome) {
 function icone(nome) {
   if (!nome) return '📊'
   const n = nome.toLowerCase()
-  if (n.includes('temperatura')) 
-  if (n.includes('umidade'))    
-  if (n.includes('pressao') || n.includes('pressão')) 
-  if (n.includes('chuva'))       
-  if (n.includes('vento'))      
+  if (n.includes('temperatura')) return '🌡️'
+  if (n.includes('umidade'))     return '💧'
+  if (n.includes('pressao') || n.includes('pressão')) return '📶'
+  if (n.includes('chuva'))       return '🌧️'
+  if (n.includes('vento'))       return '💨'
   return '📊'
 }
 
@@ -192,29 +192,33 @@ function GraficoParametro({ nomeParam, medicoes }) {
 export default function Dashboard({ medicoes, estacoes }) {
 
   const [estacaoSelecionada, setEstacaoSelecionada] = useState('')
-// Quando as estações forem carregadas, seleciona a primeira automaticamente
-useEffect(function() {
-  if (estacoes.length > 0 && !estacaoSelecionada) {
-    setEstacaoSelecionada(String(estacoes[0].id))
-  }
-}, [estacoes])
 
-// Filtra apenas as medições pertencentes à estação selecionada
-const medicoesDaEstacao = medicoes.filter(function(m) {
-  return String(m.id_estacao) === String(estacaoSelecionada)
-})
+  // Quando as estações forem carregadas, seleciona a primeira automaticamente
+  useEffect(function() {
+    if (estacoes.length > 0 && !estacaoSelecionada) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEstacaoSelecionada(String(estacoes[0].id))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estacoes])
 
-// Extrai os nomes dos parâmetros e remove valores vazios e duplicados
-const parametros = [...new Set(
-  medicoesDaEstacao
-    .map(function(m) { return m.nome_parametro })
-    .filter(Boolean)
-)]
+  // Filtra apenas as medições pertencentes à estação selecionada
+  const medicoesDaEstacao = medicoes.filter(function(m) {
+    return String(m.id_estacao) === String(estacaoSelecionada)
+  })
 
-// Localiza o objeto completo da estação atualmente selecionada
-const estacao = estacoes.find(function(e) {
-  return String(e.id) === String(estacaoSelecionada)
-})
+  // Extrai os nomes dos parâmetros e remove valores vazios e duplicados
+  const parametros = [...new Set(
+    medicoesDaEstacao
+      .map(function(m) { return m.nome_parametro })
+      .filter(Boolean)
+  )]
+
+  // Localiza o objeto completo da estação atualmente selecionada
+  const estacao = estacoes.find(function(e) {
+    return String(e.id) === String(estacaoSelecionada)
+  })
+
   return (
    <div>
 

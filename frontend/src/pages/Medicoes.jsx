@@ -4,13 +4,13 @@ const CINCO_MINUTOS = 5 * 60 * 1000
 
 export default function Medicoes({ medicoes, estacoes }) {
 
+  // eslint-disable-next-line no-unused-vars
   const [filtroEstacao,     setFiltroEstacao]     = useState('')
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(new Date())
   const [proximaLimpeza,    setProximaLimpeza]    = useState(CINCO_MINUTOS / 1000)
-  const [historicoLocal,    setHistoricoLocal]    = useState([])
 
   useEffect(function() {
-    setHistoricoLocal(medicoes)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUltimaAtualizacao(new Date())
   }, [medicoes])
 
@@ -24,30 +24,22 @@ export default function Medicoes({ medicoes, estacoes }) {
     return function() { clearInterval(contador) }
   }, [])
 
-  useEffect(function() {
-    const limpeza = setInterval(function() {
-      setHistoricoLocal([])
-      setProximaLimpeza(CINCO_MINUTOS / 1000)
-    }, CINCO_MINUTOS)
-    return function() { clearInterval(limpeza) }
-  }, [])
-
   function formatarContador(segundos) {
     const m = Math.floor(segundos / 60)
     const s = segundos % 60
     return `${m}:${String(s).padStart(2, '0')}`
   }
 
-// se filtroEstacao tiver um id, filtra só as medições daquela estação
-// se estiver vazio, retorna todas as medições sem filtro
-const medicoesFiltradas = filtroEstacao
+  // se filtroEstacao tiver um id, filtra só as medições daquela estação
+  // se estiver vazio, retorna todas as medições sem filtro
+  const medicoesFiltradas = filtroEstacao
 
-  // filtroEstacao tem valor: percorre historicoLocal e retorna só as medições
-  // cuja id_estacao bate com o id guardado no estado
-  ? historicoLocal.filter(function(m) { return String(m.id_estacao) === String(filtroEstacao) })
+    // filtroEstacao tem valor: percorre medicoes e retorna só as medições
+    // cuja id_estacao bate com o id guardado no estado
+    ? medicoes.filter(function(m) { return String(m.id_estacao) === String(filtroEstacao) })
 
-  // filtroEstacao está vazio: retorna tudo sem filtrar
-  : historicoLocal
+    // filtroEstacao está vazio: retorna tudo sem filtrar
+    : medicoes
 
   function formatarData(dataStr) {
     if (!dataStr) return '—'
@@ -110,7 +102,7 @@ const medicoesFiltradas = filtroEstacao
   function ultimasPorEstacao(idEstacao) {
     const vistos    = {}
     const resultado = []
-    const medicoesDaEstacao = historicoLocal.filter(function(m) {
+    const medicoesDaEstacao = medicoes.filter(function(m) {
       return String(m.id_estacao) === String(idEstacao)
     })
     for (const m of medicoesDaEstacao) {

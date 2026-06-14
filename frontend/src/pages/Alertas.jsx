@@ -25,6 +25,10 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
   const alertasAutomaticos = alertas.filter(function(a) { return a.automatico })
   const alertasCadastrados = alertas.filter(function(a) { return !a.automatico })
 
+  // extrai os ids dos alertas automáticos numa string simples,
+  // para que o useEffect tenha uma dependência estável e fácil de comparar
+  const idsAlertasAutomaticos = alertasAutomaticos.map(function(a) { return a.id }).join(',')
+
   // quando chegam avisos automáticos novos, marca como visível e agenda remoção em 10s
   useEffect(function() {
     alertasAutomaticos.forEach(function(a) {
@@ -37,7 +41,8 @@ export default function Alertas({ alertas, estacoes, parametros, ehAdmin, crud }
         setAvisosVisiveis(function(prev) { return { ...prev, [a.id]: false } })
       }, 10000)
     })
-  }, [alertasAutomaticos.map(function(a) { return a.id }).join(',')])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsAlertasAutomaticos])
 
   const avisosParaMostrar = alertasAutomaticos.filter(function(a) {
     return avisosVisiveis[a.id] !== false
